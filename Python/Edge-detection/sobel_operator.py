@@ -2,11 +2,11 @@ import cv2
 import numpy as np
 
 # Load the image
-#img = cv2.imread('Cat.png')
+img = cv2.imread('image.png')
 
 # Convert to grayscale
-#gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-gray = cv2.imread('filtered_cat_BP.png')#, cv2.IMREAD_GRAYSCALE)
+gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#gray = cv2.imread('filtered_cat_BP.png')#, cv2.IMREAD_GRAYSCALE) #used for images from the median filter
 # Define Sobel kernels
 sobel_x = np.array([[-1, 0, 1],
                     [-2, 0, 2],
