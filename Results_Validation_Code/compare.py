@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import argparse
 
 def calculate_psnr(img1, img2):
     mse = np.mean((img1 - img2) ** 2)
@@ -63,9 +64,10 @@ def compare_images(python_path, hdl_path):
     print("Note: PSNR=∞ means identical images")
 
 if __name__ == "__main__":
-    
-    python_img = "anime.jpg"  # Python-processed image
-    hdl_img = "anime.jpg"          # FPGA output image
-    
-    compare_images(python_img, hdl_img)
-    input("Press Enter to exit...")  # Keeps console open on Windows
+    parser = argparse.ArgumentParser(description="Compare grayscale images from Python and HDL output.")
+    parser.add_argument("python_img", help="Path to Python-processed grayscale image")
+    parser.add_argument("hdl_img", help="Path to HDL output grayscale image")
+    args = parser.parse_args()
+
+    compare_images(args.python_img, args.hdl_img)
+    input("Press Enter to exit...")
