@@ -1,0 +1,75 @@
+import cv2
+import numpy as np
+import argparse
+from pathlib import Path
+
+def enhanced_yuv_fusion(original_path, bw_path, output_path="fusion_output.png", 
+                       black_boost=0.0, white_clip=1.0):
+    """
+    Merge B&W and color images with control over pure black/white handling.
+
+    Args:
+        original_path: Path to color RGB image.
+        bw_path: Path to B&W image (FPGA output/edge map).
+        output_path: Output file path.
+        black_boost: Additive term to prevent pure black (0-255).
+        white_clip: Scaling factor for white values (0.0-1.0).
+    """
+    # Load images
+    original = cv2.imread(original_path)
+    bw = cv2.imread(bw_path, 0)  # Force grayscale
+
+    if original is None:
+        raise FileNotFoundError(f"Could not load original image: {original_path}")
+    if bw is None:
+        raise FileNotFoundError(f"Could not load B&W image: {bw_path}")
+
+    # Resize B&W to match original
+    bw_resized = cv2.resize(bw, (original.shape[1], original.shape[0]))
+
+    # Convert to YUV and replace Y channel
+    yuv = cv2.cvtColor(original, cv2.COLOR_BGR2YUV)
+
+    # Apply black boost
+    if black_boost > 0:
+        bw_resized = np.where(bw_resized == 0, black_boost, bw_resized)
+
+    # Apply white clipping
+    if white_clip < 1.0:
+        bw_resized = (bw_resized.astype(np.float32) * white_clip).clip(0, 255).astype(np.uint8)
+
+    # Replace Y channel
+    yuv[:, :, 0] = bw_resized
+
+    # Convert back to BGR and save
+    output = cv2.cvtColor(yuv, cv2.COLOR_YUV2BGR)
+    cv2.imwrite(output_path, output)
+    print(f"✅ Saved fused image to: {output_path}")
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Enhanced YUV Fusion Tool")
+    parser.add_argument("original_path", help="Path to the color input image")
+    parser.add_argument("bw_path", help="Path to the grayscale edge/BW image")
+    parser.add_argument("output_path", nargs="?", default="fusion_output.png", help="Output file name")
+    parser.add_argument("--black_boost", type=float, default=0.0, help="Prevent pure black (e.g., 30)")
+    parser.add_argument("--white_clip", type=float, default=1.0, help="Prevent full white (e.g., 0.8)")
+
+    args = parser.parse_args()
+
+    # check file existence
+    if not Path(args.original_path).is_file():
+        print(f"❌ Error: File not found - {args.original_path}")
+        exit(1)
+    if not Path(args.bw_path).is_file():
+        print(f"❌ Error: File not found - {args.bw_path}")
+        exit(1)
+
+    # Run the fusion function
+    enhanced_yuv_fusion(
+        args.original_path,
+        args.bw_path,
+        args.output_path,
+        black_boost=args.black_boost,
+        white_clip=args.white_clip
+    )
